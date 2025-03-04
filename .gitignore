@@ -8,3 +8,5 @@ __pycache__
 HASH
 *.tgz
 tests/json_generator_tmp/
+.vscode
+pipeline.py

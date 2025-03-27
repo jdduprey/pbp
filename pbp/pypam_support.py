@@ -245,7 +245,10 @@ class PypamSupport:
             self.log.info(
                 f"  Applying sensitivity({len(freq_subset.values)})={freq_subset}"
             )
-            psd_da -= freq_subset.values
+            psd_da -= freq_subset.values + 128.9
+            # NOTE OOI broadband hydrophone output is 24-bit ADC with maximum 3 volts.
+            # So, there are 8388608 / 3 = 2796202 counts per volt which is equivalent
+            # to 128.9 dB (=20log10(2796202)).
 
         return psd_da
 

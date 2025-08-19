@@ -9,75 +9,9 @@ list:
 ####################
 # some conveniences:
 
-# Run pbp/main_json_generator.py
-json-gen *args="":
-  poetry run python pbp/main_json_generator.py {{args}}
-
-# ssh to gizo
-ssh-gizo user="carueda" server="gizo.shore.mbari.org":
-    ssh {{user}}@{{server}}
-
-# Package and transfer complete code to gizo
-to-gizo user="carueda" server="gizo.shore.mbari.org": tgz
-    #!/usr/bin/env bash
-    HASH=$(git rev-parse --short HEAD)
-    echo "$HASH" > HASH
-    scp HASH pbp_${HASH}.tgz {{user}}@{{server}}:/PAM_Analysis/pypam-space/processing_our_data/
-
-# Package for subsequent code transfer to gizo
-tgz:
-    #!/usr/bin/env bash
-    HASH=$(git rev-parse --short HEAD)
-    git archive ${HASH} -o pbp_${HASH}.tgz --prefix=pbp/
-
-# Run main (on gizo)
-main-gizo date="20220902" output_dir="/PAM_Analysis/pypam-space/test_output/daily":
-    PYTHONPATH=. poetry run python pbp/main_hmb_generator.py \
-                 --json-base-dir=json \
-                 --date={{date}} \
-                 --voltage-multiplier=3 \
-                 --sensitivity-uri=misc/icListen1689_sensitivity_hms256kHz.nc \
-                 --subset-to 10 100000 \
-                 --audio-path-map-prefix="s3://pacific-sound-256khz-2022~file:///PAM_Archive/2022" \
-                 --output-dir={{output_dir}}
-
-# Run main (on gizo) with some initial test jsons
-main-gizo-test *more_args="":
-    PYTHONPATH=. poetry run python pbp/main_hmb_generator.py \
-                 --json-base-dir=tests/json \
-                 --date=20220902 \
-                 --voltage-multiplier=3 \
-                 --sensitivity-uri=misc/icListen1689_sensitivity_hms256kHz.nc \
-                 --subset-to 10 100000 \
-                 --audio-base-dir=tests/wav \
-                 --audio-path-map-prefix="s3://pacific-sound-256khz-2022~file:///PAM_Archive/2022" \
-                 --output-dir=/PAM_Analysis/pypam-space/test_output/daily \
-                 {{more_args}}
-
-# Run multiple days (on gizo)
-main-gizo-multiple-days year month *days="":
-    #!/usr/bin/env bash
-    source virtenv/bin/activate
-    set -ue
-    output_dir="/PAM_Analysis/pypam-space/test_output/daily"
-    echo "Running: year={{year}} month={{month}} days={{days}}"
-    export PYTHONPATH=.
-    for day in {{days}}; do
-      date=$(printf "%04d%02d%02d" {{year}} {{month}} "$day")
-      base="$output_dir/milli_psd_$date"
-      out="$base.out"
-      echo "running: day=$day output_dir=$output_dir"
-      poetry run python pbp/main_hmb_generator.py \
-             --json-base-dir=json \
-             --date="$date" \
-             --voltage-multiplier=3 \
-             --sensitivity-uri=misc/icListen1689_sensitivity_hms256kHz.nc \
-             --subset-to 10 100000 \
-             --audio-path-map-prefix="s3://pacific-sound-256khz-{{year}}~file:///PAM_Archive/{{year}}" \
-             --output-dir="$output_dir" \
-             > "$out" 2>&1 &
-    done
-    wait
+# Run pbp/main_meta_generator.py
+meta-gen *args="":
+  poetry run python pbp/main_meta_generator.py {{args}}
 
 # Replicate notebook
 main-mb05 *more_args="":
@@ -239,16 +173,6 @@ main *args="":
 # Generate summary plots
 hmb-plot *args:
     poetry run python pbp/main_plot.py {{args}}
-
-##############
-# docker:
-
-dockerize-for-notebooks dockerfile='docker/Dockerfile-minimal':
-    docker build -f {{dockerfile}} -t mbari/pbp .
-
-run-docker-for-notebooks dir='notebooks':
-    docker run -it --rm -p 8899:8899 mbari/pbp:1
-
 
 ##############
 # package build/publishing:
